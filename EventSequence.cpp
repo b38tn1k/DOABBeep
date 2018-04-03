@@ -9,13 +9,11 @@ void EventSequence::addNewStepToTail(uint8_t _sequenceNumber) {
   temp->sequenceNumber = _sequenceNumber;
   temp->next = NULL;
   if (head == NULL) {
-    temp->prev = NULL;
     head = temp;
     tail = temp;
     current = head;
   } else {
     tail->next = temp;
-    temp->prev = tail;
     tail = temp;
   }
   temp = NULL;
@@ -45,23 +43,10 @@ void EventSequence::toggleBank() {
   else {bank = 0;}
 }
 
-void EventSequence::addNote2CurrentStep(uint8_t _note) {
-  int i;
-  for (i = 0; i < POLY; i++) {
-    if (current->notes[bank][i] == _note) {
-      break; // don't double record notes
-    }
-    if (current->notes[bank][i] == NULL) {
-      current->notes[bank][i] = _note;
-      break;
-    }
-  }
-}
-
 void EventSequence::setSync(uint16_t val){
-  current->notes[bank][0] = val;
+  current->notes[bank] = val;
 }
 
 uint16_t EventSequence::getSync(){
-  return current->notes[bank][0];
+  return current->notes[bank];
 }

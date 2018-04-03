@@ -24,7 +24,7 @@
 #include "Arduino.h"
 #include "EventSequence.h"
 #include "Timer.h"
-EventSequence sequencer(16);
+EventSequence sequencer(32);
 Timer timer(480);
 
 uint16_t syncPhaseAcc;
@@ -206,10 +206,10 @@ void loop() {
       syncPhaseInc = 0;
     } else {
       syncPhaseInc = midiTable[sequencer.getSync()];
-      grainPhaseInc  = mapPhaseInc(200);
-      grainDecay     = 200 * sin(millis() / 1000);
-      grain2PhaseInc = mapPhaseInc(200);
-      grain2Decay    = 150 * cos(millis() / 1000 + 10);
+      grainPhaseInc  = mapPhaseInc(200 * cos(millis()%500));
+      grainDecay     = 200 * sin(millis() % 1000);
+      grain2PhaseInc = mapPhaseInc(200 * sin((millis() % 1000)+300));
+      grain2Decay    = 150 * cos(millis() % 1000 + 10);
 //      grainPhaseInc  = mapPhaseInc(analogRead(GRAIN_FREQ_CONTROL)) / 2;
 //      grainDecay     = analogRead(GRAIN_DECAY_CONTROL) / 8;
 //      grain2PhaseInc = mapPhaseInc(analogRead(GRAIN2_FREQ_CONTROL)) / 2;
