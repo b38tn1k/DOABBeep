@@ -19,13 +19,16 @@
 // 7 Apr 2009: Fixed interrupt vector for ATmega328 boards
 // 8 Apr 2009: Added support for ATmega1280 boards (Arduino Mega)
 
+// 2 Apr 2017: (James) Basic Step Sequencer
+
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include "Arduino.h"
 #include "EventSequence.h"
 #include "Timer.h"
-EventSequence sequencer(32);
-Timer timer(480);
+EventSequence sequencer(64);
+Timer seqTimer(480);
+Timer envTimer(50 * 480);
 
 uint16_t syncPhaseAcc;
 uint16_t syncPhaseInc;
@@ -37,6 +40,7 @@ uint16_t grain2PhaseAcc;
 uint16_t grain2PhaseInc;
 uint16_t grain2Amp;
 uint8_t grain2Decay;
+uint8_t ampEnv;
 
 // Map Analogue channels
 #define SYNC_CONTROL         (4)
@@ -85,19 +89,21 @@ uint8_t grain2Decay;
 
 // Smooth logarithmic mapping
 //
-uint16_t antilogTable[] = {
+const uint16_t antilogTable[] PROGMEM = {
   64830,64132,63441,62757,62081,61413,60751,60097,59449,58809,58176,57549,56929,56316,55709,55109,
   54515,53928,53347,52773,52204,51642,51085,50535,49991,49452,48920,48393,47871,47356,46846,46341,
   45842,45348,44859,44376,43898,43425,42958,42495,42037,41584,41136,40693,40255,39821,39392,38968,
   38548,38133,37722,37316,36914,36516,36123,35734,35349,34968,34591,34219,33850,33486,33125,32768
 };
 uint16_t mapPhaseInc(uint16_t input) {
-  return (antilogTable[input & 0x3f]) >> (input >> 6);
+//  return (antilogTable[input & 0x3f]) >> (input >> 6);
+    uint16_t b = pgm_read_word_near(antilogTable + (input & 0x3f));
+  return b >> (input >> 6);
 }
 
 // Stepped chromatic mapping
 //
-uint16_t midiTable[] = {
+const uint16_t midiTable[] PROGMEM = {
   0, 17,18,19,20,22,23,24,26,27,29,31,32,34,36,38,41,43,46,48,51,54,58,61,65,69,73,
   77,82,86,92,97,103,109,115,122,129,137,145,154,163,173,183,194,206,218,231,
   244,259,274,291,308,326,346,366,388,411,435,461,489,518,549,581,616,652,691,
@@ -107,9 +113,6 @@ uint16_t midiTable[] = {
   10440,11060,11718,12415,13153,13935,14764,15642,16572,17557,18601,19708,20879,
   22121,23436,24830,26306
 };
-uint16_t mapMidi(uint16_t input) {
-  return (midiTable[(1023-input) >> 3]);
-}
 
 void audioOn() {
 #if defined(__AVR_ATmega8__)
@@ -141,57 +144,57 @@ void setup() {
 }
 
 void loop() {
-  if (timer.tick() == true) {
+  if (seqTimer.tick() == true) {
     sequencer.step();    //TEST!!
-    if (sequencer.current->sequenceNumber == 1) {
+    ampEnv = 0;
+    if (sequencer.current->sequenceNumber % 1 == 0) {
       sequencer.setSync(50);
     }
-    if (sequencer.current->sequenceNumber == 2) {
-      sequencer.setSync(0);
-    }
-    if (sequencer.current->sequenceNumber == 3) {
-      sequencer.setSync(0);
-    }
-    if (sequencer.current->sequenceNumber == 4) {
+    if (sequencer.current->sequenceNumber % 2 == 0) {
       sequencer.setSync(50);
     }
-    if (sequencer.current->sequenceNumber == 5) {
+    if (sequencer.current->sequenceNumber % 3 == 0) {
       sequencer.setSync(0);
     }
-    if (sequencer.current->sequenceNumber == 6) {
-      sequencer.setSync(0);
-    }
-    if (sequencer.current->sequenceNumber == 7) {
+    if (sequencer.current->sequenceNumber % 4 == 0) {
       sequencer.setSync(50);
     }
-    if (sequencer.current->sequenceNumber == 8) {
+    if (sequencer.current->sequenceNumber % 5 == 0) {
       sequencer.setSync(0);
     }
-    if (sequencer.current->sequenceNumber == 9) {
+    if (sequencer.current->sequenceNumber % 6 == 0) {
       sequencer.setSync(0);
     }
-    if (sequencer.current->sequenceNumber == 10) {
+    if (sequencer.current->sequenceNumber % 7 == 0) {
       sequencer.setSync(50);
     }
-    if (sequencer.current->sequenceNumber == 11) {
+    if (sequencer.current->sequenceNumber & 8 == 0) {
+      sequencer.setSync(0);
+    }
+    if (sequencer.current->sequenceNumber % 9 == 0) {
+      sequencer.setSync(0);
+    }
+    if (sequencer.current->sequenceNumber % 10 == 0) {
+      sequencer.setSync(50);
+    }
+    if (sequencer.current->sequenceNumber % 11 == 0) {
       sequencer.setSync(62);
     }
-    if (sequencer.current->sequenceNumber == 12) {
+    if (sequencer.current->sequenceNumber % 12 == 0) {
       sequencer.setSync(52);
     }
-    if (sequencer.current->sequenceNumber == 13) {
+    if (sequencer.current->sequenceNumber % 13 == 0) {
       sequencer.setSync(64);
     }
-    if (sequencer.current->sequenceNumber == 14) {
+    if (sequencer.current->sequenceNumber % 14 == 0) {
       sequencer.setSync(53);
     }
-    if (sequencer.current->sequenceNumber == 15) {
+    if (sequencer.current->sequenceNumber % 15 == 0) {
       sequencer.setSync(65);
     }
-    if (sequencer.current->sequenceNumber == 16) {
+    if (sequencer.current->sequenceNumber % 16 == 0) {
       sequencer.setSync(74);
     }
-    
     Serial.println(sequencer.current->sequenceNumber);
     Serial.println(sequencer.getSync());
     Serial.println();
@@ -205,16 +208,20 @@ void loop() {
       grain2Decay    = 10000;
       syncPhaseInc = 0;
     } else {
-      syncPhaseInc = midiTable[sequencer.getSync()];
-      grainPhaseInc  = mapPhaseInc(200 * cos(millis()%500));
-      grainDecay     = 200 * sin(millis() % 1000);
-      grain2PhaseInc = mapPhaseInc(200 * sin((millis() % 1000)+300));
-      grain2Decay    = 150 * cos(millis() % 1000 + 10);
+      syncPhaseInc = pgm_read_word_near(midiTable + sequencer.getSync());
+      grainPhaseInc  = mapPhaseInc(1023 * sin(2.0/sequencer.current->sequenceNumber));
+      grainDecay     = 1023 * cos(2.0/(16 - sequencer.current->sequenceNumber));
+      grain2PhaseInc = mapPhaseInc(1023 * cos(2.0/(16 - sequencer.current->sequenceNumber)));
+      grain2Decay    = 1023 * sin(2.0/sequencer.current->sequenceNumber);
 //      grainPhaseInc  = mapPhaseInc(analogRead(GRAIN_FREQ_CONTROL)) / 2;
 //      grainDecay     = analogRead(GRAIN_DECAY_CONTROL) / 8;
 //      grain2PhaseInc = mapPhaseInc(analogRead(GRAIN2_FREQ_CONTROL)) / 2;
 //      grain2Decay    = analogRead(GRAIN2_DECAY_CONTROL) / 4;
     }
+    if (envTimer.tick() == true) {
+      if (ampEnv < 255) ampEnv += 1;
+    }
+    
 }
 
 SIGNAL(PWM_INTERRUPT)
@@ -252,6 +259,8 @@ SIGNAL(PWM_INTERRUPT)
   grain2Amp -= (grain2Amp >> 8) * grain2Decay;
 
   // Scale output to the available range, clipping if necessary
+//  output = output -  ampEnv;
+//  output >>= 12;
   output >>= 9;
   if (output > 255) output = 255;
 
