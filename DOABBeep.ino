@@ -26,7 +26,8 @@
 #include "Arduino.h"
 #include "EventSequence.h"
 #include "Timer.h"
-EventSequence sequencer(64);
+//EventSequence sequencer(64);
+EventSequence sequencer(16);
 Timer seqTimer(480);
 Timer envTimer(50 * 480);
 
@@ -209,10 +210,14 @@ void loop() {
       syncPhaseInc = 0;
     } else {
       syncPhaseInc = pgm_read_word_near(midiTable + sequencer.getSync());
-      grainPhaseInc  = mapPhaseInc(1023 * sin(2.0/sequencer.current->sequenceNumber));
-      grainDecay     = 1023 * cos(2.0/(16 - sequencer.current->sequenceNumber));
-      grain2PhaseInc = mapPhaseInc(1023 * cos(2.0/(16 - sequencer.current->sequenceNumber)));
-      grain2Decay    = 1023 * sin(2.0/sequencer.current->sequenceNumber);
+      grainPhaseInc  = 512;
+      grainDecay     = 250;
+      grain2PhaseInc = 250;
+      grain2Decay    = 125;
+//      grainPhaseInc  = mapPhaseInc(1023 * sin(2.0/sequencer.current->sequenceNumber));
+//      grainDecay     = 1023 * cos(2.0/(16 - sequencer.current->sequenceNumber));
+//      grain2PhaseInc = mapPhaseInc(1023 * cos(2.0/(16 - sequencer.current->sequenceNumber)));
+//      grain2Decay    = 1023 * sin(2.0/sequencer.current->sequenceNumber);
 //      grainPhaseInc  = mapPhaseInc(analogRead(GRAIN_FREQ_CONTROL)) / 2;
 //      grainDecay     = analogRead(GRAIN_DECAY_CONTROL) / 8;
 //      grain2PhaseInc = mapPhaseInc(analogRead(GRAIN2_FREQ_CONTROL)) / 2;
