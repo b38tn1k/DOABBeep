@@ -26,10 +26,7 @@
 #include "Arduino.h"
 #include "EventSequence.h"
 #include "Timer.h"
-//EventSequence sequencer(64);
-EventSequence sequencer(16);
-Timer seqTimer(480);
-Timer envTimer(50 * 480);
+
 
 uint16_t syncPhaseAcc;
 uint16_t syncPhaseInc;
@@ -49,6 +46,11 @@ uint8_t ampEnv;
 #define GRAIN_DECAY_CONTROL  (2)
 #define GRAIN2_FREQ_CONTROL  (3)
 #define GRAIN2_DECAY_CONTROL (1)
+#define CLK_SOURCE (12)
+
+//EventSequence sequencer(64);
+EventSequence sequencer(16);
+Timer seqTimer(480, CLK_SOURCE, NULL, 13);
 
 
 // Changing these will also requires rewriting audioOn()
@@ -142,9 +144,10 @@ void setup() {
   grain2PhaseInc = 0;
   grain2Decay    = 0;
   syncPhaseInc   = 0;
+  Serial.println("hi");
 }
 
-void loop() {
+void loop() {  
   if (seqTimer.tick() == true) {
     sequencer.step();    //TEST!!
     ampEnv = 0;
@@ -213,20 +216,16 @@ void loop() {
       grainPhaseInc  = 512;
       grainDecay     = 250;
       grain2PhaseInc = 250;
-      grain2Decay    = 125;
-//      grainPhaseInc  = mapPhaseInc(1023 * sin(2.0/sequencer.current->sequenceNumber));
-//      grainDecay     = 1023 * cos(2.0/(16 - sequencer.current->sequenceNumber));
-//      grain2PhaseInc = mapPhaseInc(1023 * cos(2.0/(16 - sequencer.current->sequenceNumber)));
-//      grain2Decay    = 1023 * sin(2.0/sequencer.current->sequenceNumber);
+      grain2Decay    = 225;
+      grainPhaseInc  = mapPhaseInc(300 * sin(2.0/sequencer.current->sequenceNumber));
+      grainDecay     = 500 * cos(2.0/(16 - sequencer.current->sequenceNumber));
+      grain2PhaseInc = mapPhaseInc(500 * cos(2.0/(16 - sequencer.current->sequenceNumber)));
+      grain2Decay    = 500 * sin(2.0/sequencer.current->sequenceNumber);
 //      grainPhaseInc  = mapPhaseInc(analogRead(GRAIN_FREQ_CONTROL)) / 2;
 //      grainDecay     = analogRead(GRAIN_DECAY_CONTROL) / 8;
 //      grain2PhaseInc = mapPhaseInc(analogRead(GRAIN2_FREQ_CONTROL)) / 2;
 //      grain2Decay    = analogRead(GRAIN2_DECAY_CONTROL) / 4;
     }
-    if (envTimer.tick() == true) {
-      if (ampEnv < 255) ampEnv += 1;
-    }
-    
 }
 
 SIGNAL(PWM_INTERRUPT)
